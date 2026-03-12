@@ -60,9 +60,9 @@ export const FloorPlan: React.FC<FloorPlanProps> = ({
             </h2>
           </div>
 
-          <div className="flex flex-col space-y-4">
+          <div className="flex flex-row flex-wrap justify-center gap-4">
             {bowling.map((resource) => (
-              <div key={resource.id} className="h-24">
+              <div key={resource.id} className="w-24 h-64 md:w-32 md:h-80">
                 <ResourceCard
                   resource={resource}
                   onClick={() => onResourceClick?.(resource)}
@@ -71,7 +71,7 @@ export const FloorPlan: React.FC<FloorPlanProps> = ({
               </div>
             ))}
             {bowling.length === 0 && (
-              <div className="h-32 flex items-center justify-center text-zinc-500 font-sans italic">
+              <div className="w-full h-32 flex items-center justify-center text-zinc-500 font-sans italic">
                 No bowling lanes configured.
               </div>
             )}

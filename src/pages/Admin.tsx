@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useResources, useUpdateStatus } from '../hooks/useResources'
+import { useResources, useUpdateStatus, useCreateResource, useDeleteResource } from '../hooks/useResources'
 import type { Resource, ResourceStatus } from '../types'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
@@ -8,16 +8,39 @@ import { useSocket } from '../hooks/useSocket'
 export const Admin: React.FC = () => {
   const { data: resources, isLoading, error } = useResources()
   const updateStatusMutation = useUpdateStatus()
+  const createResourceMutation = useCreateResource()
+  const deleteResourceMutation = useDeleteResource()
   const { logout } = useAuth()
   const { isConnected } = useSocket()
   
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newType, setNewType] = useState<'billiards' | 'bowling'>('billiards')
 
   const handleStatusChange = (status: ResourceStatus) => {
     if (!selectedResource) return
-    
     updateStatusMutation.mutate({ id: selectedResource.id, status })
-    setSelectedResource(null) // close the modal after action
+    setSelectedResource(null)
+  }
+
+  const handleDelete = () => {
+    if (!selectedResource) return
+    if (window.confirm(`Are you sure you want to delete ${selectedResource.name}?`)) {
+      deleteResourceMutation.mutate(selectedResource.id)
+      setSelectedResource(null)
+    }
+  }
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newName.trim()) return
+    createResourceMutation.mutate({ name: newName, type: newType }, {
+      onSuccess: () => {
+        setIsAddModalOpen(false)
+        setNewName('')
+      }
+    })
   }
 
   const billiards = resources?.filter((r) => r.type === 'billiards') || []
@@ -64,7 +87,18 @@ export const Admin: React.FC = () => {
         </button>
       </header>
 
-      <main className="p-4 space-y-8 max-w-3xl mx-auto mt-4">
+      <main className="p-4 space-y-8 max-w-3xl mx-auto mt-4 relative">
+        {/* Add Resource Button */}
+        <div className="flex justify-end mb-4">
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium tracking-wide transition-colors shadow-lg"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add Table / Lane
+          </button>
+        </div>
+
         {/* Billiards Category */}
         <section>
           <h2 className="text-zinc-500 font-sans text-xs tracking-widest uppercase mb-4 px-1">
@@ -98,6 +132,76 @@ export const Admin: React.FC = () => {
         </section>
       </main>
 
+      {/* Add Resource Modal */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <>
+             <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddModalOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-3xl p-6 z-50 shadow-2xl"
+            >
+              <h3 className="text-2xl font-display font-medium text-white mb-6 text-center">
+                New Resource
+              </h3>
+              
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium tracking-widest text-zinc-400 uppercase mb-2">Name</label>
+                  <input 
+                    type="text" 
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    required
+                    placeholder="e.g. Pool Table 5"
+                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-sans"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-medium tracking-widest text-zinc-400 uppercase mb-2">Type</label>
+                  <select 
+                    value={newType}
+                    onChange={e => setNewType(e.target.value as 'billiards' | 'bowling')}
+                    className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-sans"
+                  >
+                    <option value="billiards">Billiards</option>
+                    <option value="bowling">Bowling</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 mt-8">
+                  <button 
+                    type="button"
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="flex-1 py-3 text-zinc-400 font-medium tracking-wide hover:bg-zinc-800 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={createResourceMutation.isPending || !newName.trim()}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-medium tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                  >
+                    {createResourceMutation.isPending ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : 'Create'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Mobile-optimized Action Modal (Bottom Sheet style) */}
       <AnimatePresence>
         {selectedResource && (
@@ -119,13 +223,23 @@ export const Admin: React.FC = () => {
             >
               <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-6" />
               
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-display font-medium text-white mb-1">
-                  {selectedResource.name}
-                </h3>
-                <p className="text-zinc-400 text-sm capitalize">
-                  Current: {selectedResource.status}
-                </p>
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h3 className="text-2xl font-display font-medium text-white mb-1">
+                    {selectedResource.name}
+                  </h3>
+                  <p className="text-zinc-400 text-sm capitalize">
+                    Current: {selectedResource.status}
+                  </p>
+                </div>
+                
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteResourceMutation.isPending}
+                  className="bg-red-500/10 text-red-500 hover:bg-red-500/20 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  {deleteResourceMutation.isPending ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -179,10 +293,12 @@ const AdminResourceCard: React.FC<{ resource: Resource, onClick: () => void }> =
   return (
     <button
       onClick={onClick}
-      className={`p-4 rounded-xl border text-left transition-all active:scale-95 ${getStatusColor(resource.status)}`}
+      className={`p-4 rounded-xl border text-left transition-all active:scale-95 ${getStatusColor(resource.status)} flex justify-between items-center`}
     >
-      <div className="font-display font-medium text-lg mb-1">{resource.name}</div>
-      <div className="text-xs tracking-wider uppercase opacity-80">{resource.status}</div>
+      <div>
+        <div className="font-display font-medium text-lg mb-1">{resource.name}</div>
+        <div className="text-xs tracking-wider uppercase opacity-80">{resource.status}</div>
+      </div>
     </button>
   )
 }

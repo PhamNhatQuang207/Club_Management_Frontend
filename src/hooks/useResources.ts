@@ -6,39 +6,92 @@ import { useSocket } from './useSocket'
 
 export const useResources = () => {
   const queryClient = useQueryClient()
-  const { socket } = useSocket()
+  const socket = useSocket()
 
-  // 1. Fetch initial data
-  const query = useQuery<Resource[]>({
+  // 1. Fetch resources
+  const query = useQuery({
     queryKey: ['resources'],
     queryFn: async () => {
-      const { data } = await api.get<Resource[]>('/resources')
-      return data
+      const response = await api.get<Resource[]>('/resources')
+      return response.data
     },
   })
 
-  // 2. Listen to WebSocket updates and invalidate/update cache
+  // 2. Listen for socket events
   useEffect(() => {
-    const handleStatusUpdate = (payload: { id: string; status: ResourceStatus }) => {
-      // Optimistically update the cache
-      queryClient.setQueryData<Resource[]>(['resources'], (old) => {
+    if (!socket.socket) return
+
+    const handleUpdate = (updated: { id: string; status: ResourceStatus }) => {
+      queryClient.setQueryData(['resources'], (old: Resource[] | undefined) => {
         if (!old) return old
-        return old.map((res) =>
-          res.id === payload.id ? { ...res, status: payload.status } : res
+        return old.map((r) =>
+          r.id === updated.id
+            ? { ...r, status: updated.status, updatedAt: new Date().toISOString() }
+            : r
         )
       })
     }
+    
+    const handleCreated = (created: Resource) => {
+      queryClient.setQueryData(['resources'], (old: Resource[] | undefined) => {
+        if (!old) return [created]
+        // prevent duplicates
+        if (old.some(r => r.id === created.id)) return old
+        return [...old, created]
+      })
+    }
 
-    socket.on('resource_status_update', handleStatusUpdate)
+    const handleDeleted = ({ id }: { id: string }) => {
+      queryClient.setQueryData(['resources'], (old: Resource[] | undefined) => {
+        if (!old) return old
+        return old.filter(r => r.id !== id)
+      })
+    }
+
+    socket.socket.on('resource_status_update', handleUpdate)
+    socket.socket.on('resource_created', handleCreated)
+    socket.socket.on('resource_deleted', handleDeleted)
 
     return () => {
-      socket.off('resource_status_update', handleStatusUpdate)
+      socket.socket?.off('resource_status_update', handleUpdate)
+      socket.socket?.off('resource_created', handleCreated)
+      socket.socket?.off('resource_deleted', handleDeleted)
     }
-  }, [socket, queryClient])
+  }, [socket.socket, queryClient])
 
   return query
 }
 
+export const useCreateResource = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (data: { name: string; type: 'billiards' | 'bowling' }) => {
+      const response = await api.post('/resources', data)
+      return response.data
+    },
+    onSuccess: () => {
+      // Invalidate just in case, though socket usually handles this
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
+    },
+  })
+}
+
+export const useDeleteResource = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/resources/${id}`)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] })
+    },
+  })
+}
+
+// 3. Update status manually (Admin mode)
 export const useUpdateStatus = () => {
   const queryClient = useQueryClient()
 
