@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useResources, useUpdateStatus } from '../hooks/useResources'
-import { Resource, ResourceStatus } from '../types'
+import type { Resource, ResourceStatus } from '../types'
 import { useAuth } from '../hooks/useAuth'
 import { useSocket } from '../hooks/useSocket'
 

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from '0'
+import { useEffect } from 'react'
 import { api } from '../lib/api'
-import { Resource, ResourceStatus } from '../types'
+import type { Resource, ResourceStatus } from '../types'
 import { useSocket } from './useSocket'
 
 export const useResources = () => {
