@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useLogin } from '../hooks/useAuth'
+import { Link } from 'react-router-dom'
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('')
@@ -13,32 +14,53 @@ export const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center p-4">
-      {/* Background elements */}
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-20 pointer-events-none mix-blend-screen" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="min-h-screen bg-surface-1 flex items-center justify-center p-4 grain-overlay">
+      {/* Ambient blurs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/3 w-80 h-80 bg-emerald-500/[0.06] rounded-full blur-[100px] animate-glow-pulse" />
+        <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-sky-500/[0.04] rounded-full blur-[80px] animate-glow-pulse" style={{ animationDelay: '1.5s' }} />
+      </div>
+
+      {/* Back link */}
+      <Link
+        to="/"
+        className="absolute top-6 left-6 text-zinc-500 hover:text-zinc-300 transition-colors font-sans text-sm flex items-center gap-2 z-20"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Back to Floor Plan
+      </Link>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-md relative z-10"
       >
-        <div className="bg-zinc-900/60 backdrop-blur-xl p-8 rounded-3xl border border-zinc-800/80 shadow-2xl">
+        <div className="bg-zinc-900/50 backdrop-blur-2xl p-8 md:p-10 rounded-3xl border border-zinc-800/60 shadow-2xl">
+          {/* Logo / Icon */}
+          <div className="flex justify-center mb-6">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+          </div>
+
           <div className="text-center mb-8">
             <h1 className="font-display text-3xl text-zinc-100 tracking-wide mb-2">
               Staff Portal
             </h1>
-            <p className="text-zinc-500 font-sans text-sm">
-              Enter your credentials to manage club resources
+            <p className="text-zinc-500 font-sans text-sm leading-relaxed">
+              Sign in to manage tables, lanes, and resource status
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label 
-                htmlFor="username" 
-                className="block text-xs font-medium tracking-widest text-zinc-400 uppercase"
+              <label
+                htmlFor="username"
+                className="block text-[11px] font-semibold tracking-widest text-zinc-400 uppercase"
               >
                 Username
               </label>
@@ -48,15 +70,15 @@ export const Login: React.FC = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-sans"
+                className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3.5 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans"
                 placeholder="admin"
               />
             </div>
 
             <div className="space-y-2">
-              <label 
-                htmlFor="password" 
-                className="block text-xs font-medium tracking-widest text-zinc-400 uppercase"
+              <label
+                htmlFor="password"
+                className="block text-[11px] font-semibold tracking-widest text-zinc-400 uppercase"
               >
                 Password
               </label>
@@ -66,21 +88,26 @@ export const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-sans"
+                className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3.5 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans"
                 placeholder="••••••••"
               />
             </div>
 
             {loginMutation.isError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm font-sans text-center">
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-sans text-center flex items-center justify-center gap-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
                 Invalid credentials. Please try again.
-              </div>
+              </motion.div>
             )}
 
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20"
             >
               {loginMutation.isPending ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -89,6 +116,10 @@ export const Login: React.FC = () => {
               )}
             </button>
           </form>
+
+          <p className="text-center text-zinc-600 text-xs mt-6 font-sans">
+            Protected area — authorized staff only
+          </p>
         </div>
       </motion.div>
     </div>
