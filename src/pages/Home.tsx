@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useResources } from '../hooks/useResources'
 import { FloorPlan } from '../components/FloorPlan'
 import { useSocket } from '../hooks/useSocket'
+import { useClubName } from '../hooks/useClubName'
 import type { Resource } from '../types'
 
 const StatusLegend: React.FC = () => (
@@ -70,6 +71,7 @@ const StatCard: React.FC<{
 export const Home: React.FC = () => {
   const { data: resources, isLoading, error } = useResources()
   const { isConnected } = useSocket()
+  const { clubName } = useClubName()
 
   const currentHour = new Date().getHours()
   const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 17 ? 'Good Afternoon' : 'Good Evening'
@@ -91,7 +93,7 @@ export const Home: React.FC = () => {
         >
           <p className="text-zinc-500 font-sans text-sm mb-1 tracking-wide">{greeting}</p>
           <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-white mb-3">
-            The Continental Club
+            {clubName}
           </h1>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
